@@ -57,11 +57,26 @@
 | `APP_MODE` | `local` / `firebase` | local이면 가짜 로그인 + 메모리 저장소 |
 | `DEV_ROLE` | `reviewer` | 로컬 모드의 기본 역할 |
 | `FIREBASE_WEB_API_KEY` | (팀장에게 1:1로 받음) | Firebase 로그인용 |
-| `GOOGLE_APPLICATION_CREDENTIALS` | `secrets/sa-이름.json` | 서비스 계정 키 경로 |
+| `GOOGLE_APPLICATION_CREDENTIALS` | `/Users/본인계정/.config/edu-web-pacs/sa-이름.json` | 서비스 계정 키 전체 경로 (저장소 밖) |
 | `DATA_DIR` | `./data_local` | 원본·결과·특징 파일 위치 |
 | `DEPLOY` | `0` / `1` | JCloud에서는 1 (local 모드로 시작되지 않음) |
 
 `.env`, `secrets/`, 데이터 파일은 **절대 커밋하지 않습니다** (`.gitignore`에 있음).
+
+### 서비스 계정 키는 저장소 밖에
+
+서비스 계정 키(JSON)가 있으면 데이터베이스 전체를 읽고 쓸 수 있습니다. 그래서 저장소 폴더 **밖**에 둡니다. 저장소 안에 두면 채팅 앱(Claude 앱, ChatGPT 등)에 폴더를 연결할 때 함께 노출될 수 있습니다.
+
+```bash
+# Mac (Windows는 C:\Users\본인계정\.config\edu-web-pacs\ 에 둔다)
+mkdir -p ~/.config/edu-web-pacs && chmod 700 ~/.config/edu-web-pacs
+mv ~/Downloads/<받은키>.json ~/.config/edu-web-pacs/sa-이름.json
+chmod 600 ~/.config/edu-web-pacs/sa-이름.json
+```
+
+그리고 `.env`의 `GOOGLE_APPLICATION_CREDENTIALS`에 그 **전체 경로**를 적습니다 (`~`는 쓰지 않음).
+`secrets/` 폴더는 쓰지 않지만, 실수로 넣어도 Git(`.gitignore`)과 AI 도구(`.claude/settings.json`, `.codex/config.toml`)가 막도록 규칙은 남겨 둡니다.
+키와 `.env` 내용은 어떤 AI 채팅에도 붙여 넣지 않습니다.
 
 ## 폴더 구조
 
@@ -112,7 +127,9 @@ ssh -p 19xxx 계정@113.198.66.75
 git clone https://github.com/reperst213/edu-web-pacs.git /srv/dermapacs/app
 cd /srv/dermapacs/app && git checkout v0.1   # 배포는 태그된 커밋으로 (첫 배포 12/2는 main)
 uv sync
-# .env 작성 (APP_MODE=firebase, DEPLOY=1, DATA_DIR=/srv/dermapacs/data)
+# .env 작성 (APP_MODE=firebase, DEPLOY=1, DATA_DIR=/srv/dermapacs/data,
+#           GOOGLE_APPLICATION_CREDENTIALS=/srv/dermapacs/secrets/sa-server.json)
+# 키 파일은 앱 폴더 밖 /srv/dermapacs/secrets/ 에 두고 chmod 600
 # deploy/dermapacs.service 의 CHANGE_ME_USER 를 바꾼 뒤 등록 (파일 안 주석 참고)
 ```
 
