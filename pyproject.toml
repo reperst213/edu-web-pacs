@@ -1,0 +1,27 @@
+[project]
+name = "edu-web-pacs"
+version = "0.1.0"
+description = "피부경 컬러 DICOM 교육용 웹 PACS (초급프로젝트 PBL Term Project)"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "streamlit>=1.50,<2",
+    "numpy>=2.2,<3",
+    "opencv-python-headless>=4.12,<5",
+    "pillow>=11",
+    "pydicom>=3,<4",
+    # DICOM 압축 디코더는 11/29 디코딩 확인 후 추가 (예: pylibjpeg, pylibjpeg-libjpeg)
+    "plotly>=5.24",
+    "firebase-admin>=6.5",
+    "requests>=2.32",
+    "python-dotenv>=1.0",
+]
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

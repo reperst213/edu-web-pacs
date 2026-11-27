@@ -1,0 +1,10 @@
+# JCloud 포트 포워딩: 인스턴스 8080 → 외부 113.198.66.75:10xxx (계획서 20.5)
+# 로컬에서는 http://localhost:8080 으로 접속한다.
+[server]
+port = 8080
+address = "0.0.0.0"
+headless = true
+maxUploadSize = 10
+
+[browser]
+gatherUsageStats = false

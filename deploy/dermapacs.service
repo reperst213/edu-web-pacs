@@ -1,0 +1,24 @@
+# JCloud systemd 서비스 (계획서 20.5). 담당: 팀원 1.
+# CHANGE_ME_USER 를 JCloud 계정 이름으로 바꾼 뒤:
+#   sudo cp deploy/dermapacs.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now dermapacs
+#   sudo systemctl status dermapacs     # 상태 확인
+#   journalctl -u dermapacs -f          # 로그 보기
+# 외부 주소: http://113.198.66.75:10xxx (xxx = 인스턴스 번호)
+
+[Unit]
+Description=DermaPACS-Edu (Streamlit)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=CHANGE_ME_USER
+WorkingDirectory=/srv/dermapacs/app
+EnvironmentFile=/srv/dermapacs/app/.env
+ExecStart=/home/CHANGE_ME_USER/.local/bin/uv run streamlit run app.py --server.port 8080 --server.address 0.0.0.0
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

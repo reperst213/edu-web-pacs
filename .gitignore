@@ -1,0 +1,23 @@
+# 비밀값 (절대 커밋 금지)
+.env
+secrets/
+*.json.key
+serviceAccount*.json
+sa-*.json
+
+# 데이터 (팀 드라이브로 공유, GitHub에는 올리지 않음)
+data/
+data_local/
+*.dcm
+*.zip
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# 기타
+.DS_Store
+.idea/
+.vscode/
