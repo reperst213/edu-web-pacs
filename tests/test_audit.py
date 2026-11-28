@@ -1,4 +1,4 @@
-"""services.audit 테스트. 간단한 가짜 저장소로 기록 내용을 확인한다."""
+"""services.audit 테스트. 간단한 임시 저장소로 기록 내용을 확인한다."""
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -8,7 +8,7 @@ from services import audit
 from services.types import Actor
 
 
-class FakeRepo(Repository):
+class TempRepo(Repository):
     def __init__(self):
         self.docs: dict[str, dict[str, dict]] = {}
 
@@ -36,7 +36,7 @@ ADMIN = Actor(uid="u-admin", role="admin")
 
 @pytest.fixture
 def repo():
-    r = FakeRepo()
+    r = TempRepo()
     audit.configure(r)
     yield r
     audit.configure(None)
