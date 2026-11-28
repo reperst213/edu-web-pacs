@@ -136,22 +136,18 @@ uv run python scripts/create_users.py             # 비밀번호를 입력받아
 | 항목 | 값 |
 | --- | --- |
 | 서비스 URL | http://s.jedutools.io:50076 (서버 안에서는 8080) |
-| SSH | `s.jedutools.io` 포트 `10076`, 계정 `ubuntu` |
-| 서버 | Ubuntu 24.04 · RAM 2GB(+스왑 1GB) · 내부 IP 10.0.0.76 |
+| 서버 | Ubuntu 24.04 · RAM 2GB(+스왑 1GB) |
 | 경로 | 코드 `/srv/dermapacs/app` · 데이터 `/srv/dermapacs/data` · 키 `/srv/dermapacs/secrets/` |
 
 ### 접속
 
-```bash
-ssh -i <받은 키 파일 경로> -p 10076 ubuntu@s.jedutools.io
-```
-
-SSH 키(`.pem`)는 팀장이 1:1로 전달합니다. 저장소 밖(예: `~/.ssh/`)에 두고 `chmod 600` 합니다.
+SSH 접속 정보(호스트·포트·계정)와 키(`.pem`)는 공개 저장소에 적지 않고 팀장이 1:1로 전달합니다.
+키는 저장소 밖(예: `~/.ssh/`)에 두고 `chmod 600` 합니다.
 
 ### 처음 설치 (한 번만)
 
 ```bash
-sudo mkdir -p /srv/dermapacs/{app,data,secrets} && sudo chown -R ubuntu:ubuntu /srv/dermapacs
+sudo mkdir -p /srv/dermapacs/{app,data,secrets} && sudo chown -R "$USER":"$USER" /srv/dermapacs
 chmod 700 /srv/dermapacs/secrets
 git clone https://github.com/reperst213/edu-web-pacs.git /srv/dermapacs/app
 cd /srv/dermapacs/app && uv sync && uv run pytest -q
@@ -159,7 +155,7 @@ cd /srv/dermapacs/app && uv sync && uv run pytest -q
 cp .env.example .env && chmod 600 .env
 # .env: APP_MODE=firebase, DEPLOY=1, DATA_DIR=/srv/dermapacs/data,
 #       GOOGLE_APPLICATION_CREDENTIALS=/srv/dermapacs/secrets/sa-server.json, FIREBASE_WEB_API_KEY=...
-# deploy/dermapacs.service 의 CHANGE_ME_USER 를 ubuntu 로 바꾼 뒤
+# deploy/dermapacs.service 의 CHANGE_ME_USER 를 서버 계정 이름으로 바꾼 뒤
 sudo cp deploy/dermapacs.service /etc/systemd/system/
 sudo systemctl daemon-reload && sudo systemctl enable --now dermapacs
 ```
