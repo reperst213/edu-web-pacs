@@ -1,6 +1,7 @@
 # edu-web-pacs (DermaPACS-Edu)
 
-저장소: https://github.com/reperst213/edu-web-pacs
+- 저장소: https://github.com/reperst213/edu-web-pacs
+- 서비스: http://s.jedutools.io:50076
 
 피부경(dermoscopy) 컬러 DICOM을 등록·조회·처리·검토하는 **교육용 웹 PACS**입니다.
 특화 기능은 "ROI 특징 기반 유사 병변 검색 + 근거 비교 카드"입니다.
@@ -54,7 +55,7 @@
 
 | 항목 | 예 | 설명 |
 | --- | --- | --- |
-| `APP_MODE` | `local` / `firebase` | local이면 가짜 로그인 + 메모리 저장소 |
+| `APP_MODE` | `local` / `firebase` | local이면 로그인 생략(사이드바에서 역할 선택) + 메모리 저장소 |
 | `DEV_ROLE` | `reviewer` | 로컬 모드의 기본 역할 |
 | `FIREBASE_WEB_API_KEY` | (팀장에게 1:1로 받음) | Firebase 로그인용 |
 | `GOOGLE_APPLICATION_CREDENTIALS` | `/Users/본인계정/.config/edu-web-pacs/sa-이름.json` | 서비스 계정 키 전체 경로 (저장소 밖) |
@@ -112,28 +113,71 @@ docs/             AI 사용 기록, 보고서용 그림
 - Cloud Firestore: 위치 asia-northeast3(서울). 보안 규칙은 `firestore.rules`(전면 거부), 색인은 `firestore.indexes.json`.
 - 앱은 서버에서 Admin SDK로만 Firestore에 접근하고, 권한 검사는 `services/permissions.py`가 합니다.
 
-## JCloud 배포 (팀원 1)
+### 테스트 계정
 
-JCloud는 포트 포워딩을 씁니다. 외부 포트 = 앞 두 자리 + 인스턴스 번호(내부 IP `10.0.0.xxx`의 끝자리 세 자리).
-
-| 용도 | 인스턴스 포트 | 외부 주소 |
+| 이메일 | 역할 | 용도 |
 | --- | --- | --- |
-| SSH | 7777 | `113.198.66.75:19xxx` |
-| 앱 (Streamlit) | 8080 | `http://113.198.66.75:10xxx` |
+| `registrar1@dermapacs.test` | 등록 담당자 | 케이스 등록·보완 재제출 |
+| `reviewer1@dermapacs.test` | 검토자 | 배정받아 검토 |
+| `reviewer2@dermapacs.test` | 검토자 | 미배정 케이스 접근 거부 시험 |
+| `admin1@dermapacs.test` | 관리자 | 배정·재오픈·역할 변경·감사 로그 |
+
+비밀번호는 README·코드에 적지 않고 팀장이 1:1로 알려 줍니다. 계정은 팀장이 만듭니다.
 
 ```bash
-ssh -p 19xxx 계정@113.198.66.75
-# 서버에서: 코드는 /srv/dermapacs/app, 데이터는 /srv/dermapacs/data
-git clone https://github.com/reperst213/edu-web-pacs.git /srv/dermapacs/app
-cd /srv/dermapacs/app && git checkout v0.1   # 배포는 태그된 커밋으로 (첫 배포 12/2는 main)
-uv sync
-# .env 작성 (APP_MODE=firebase, DEPLOY=1, DATA_DIR=/srv/dermapacs/data,
-#           GOOGLE_APPLICATION_CREDENTIALS=/srv/dermapacs/secrets/sa-server.json)
-# 키 파일은 앱 폴더 밖 /srv/dermapacs/secrets/ 에 두고 chmod 600
-# deploy/dermapacs.service 의 CHANGE_ME_USER 를 바꾼 뒤 등록 (파일 안 주석 참고)
+uv run python scripts/create_users.py --dry-run   # 무엇을 만들지만 출력
+uv run python scripts/create_users.py             # 비밀번호를 입력받아 Auth 계정 + users/{uid} 생성
 ```
 
-인스턴스 번호와 서비스 URL은 첫 배포(12/2) 후 이 표에 채웁니다.
+다시 실행해도 안전합니다 (이미 있는 계정은 비밀번호를 그대로 두고 역할만 맞춤).
+
+## JCloud 배포 (팀원 1)
+
+| 항목 | 값 |
+| --- | --- |
+| 서비스 URL | http://s.jedutools.io:50076 (서버 안에서는 8080) |
+| 서버 | Ubuntu 24.04 · RAM 2GB(+스왑 1GB) |
+| 경로 | 코드 `/srv/dermapacs/app` · 데이터 `/srv/dermapacs/data` · 키 `/srv/dermapacs/secrets/` |
+
+### 접속
+
+SSH 접속 정보(호스트·포트·계정)와 키(`.pem`)는 공개 저장소에 적지 않고 팀장이 1:1로 전달합니다.
+키는 저장소 밖(예: `~/.ssh/`)에 두고 `chmod 600` 합니다.
+
+### 처음 설치 (한 번만)
+
+```bash
+sudo mkdir -p /srv/dermapacs/{app,data,secrets} && sudo chown -R "$USER":"$USER" /srv/dermapacs
+chmod 700 /srv/dermapacs/secrets
+git clone https://github.com/reperst213/edu-web-pacs.git /srv/dermapacs/app
+cd /srv/dermapacs/app && uv sync && uv run pytest -q
+# 서버 키를 /srv/dermapacs/secrets/sa-server.json 에 두고 chmod 600 (내 Mac에서 scp로 올림)
+cp .env.example .env && chmod 600 .env
+# .env: APP_MODE=firebase, DEPLOY=1, DATA_DIR=/srv/dermapacs/data,
+#       GOOGLE_APPLICATION_CREDENTIALS=/srv/dermapacs/secrets/sa-server.json, FIREBASE_WEB_API_KEY=...
+# deploy/dermapacs.service 의 CHANGE_ME_USER 를 서버 계정 이름으로 바꾼 뒤
+sudo cp deploy/dermapacs.service /etc/systemd/system/
+sudo systemctl daemon-reload && sudo systemctl enable --now dermapacs
+```
+
+### 새 버전 올리기
+
+```bash
+cd /srv/dermapacs/app
+git fetch --tags && git checkout v0.1     # 배포는 태그된 커밋으로 (첫 배포 12/2는 main)
+uv sync && uv run pytest -q               # 테스트가 통과할 때만 재시작
+sudo systemctl restart dermapacs
+```
+
+### 상태·로그
+
+```bash
+sudo systemctl status dermapacs
+journalctl -u dermapacs -f
+```
+
+- `DEPLOY=1`이면 `APP_MODE=local`로는 앱이 시작되지 않습니다. 로그인 없는 로컬 모드를 바깥에 띄워 두지 않습니다.
+- RAM이 2GB라 서버에서 특징 행렬 생성 같은 무거운 작업은 하지 않습니다 (팀원 PC에서 만들어 결과만 올림).
 
 ## 데이터 출처와 이용 조건
 
